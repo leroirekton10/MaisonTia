@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+
+# Node / Frontend
+node_modules/
+dist/
+dist-ssr/
+.vercel/
+*.local
+
+# Java / Maven / Backend
+target/
+*.class
+*.jar
+*.war
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Uploads / Logs
+uploads/
+logs/
+*.log
+
+# Editor
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
