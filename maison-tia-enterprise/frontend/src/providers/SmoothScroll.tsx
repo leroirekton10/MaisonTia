@@ -9,34 +9,40 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function SmoothScroll({ children }: { children: ReactNode }) {
   useEffect(() => {
+    // 1. Initialisation Lenis ultra-fluide sans blocage
     const lenis = new Lenis({
-      duration: 1.0,
+      autoRaf: false,
+      duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
-      touchMultiplier: 1.5,
+      wheelMultiplier: 1.0,
+      touchMultiplier: 1.0,
     });
 
-    // ── Critical integration: sync Lenis → GSAP ScrollTrigger ──
-    // On every Lenis scroll tick, tell ScrollTrigger to re-evaluate
-    // all triggers. Without this, pinned sections consume wheel events
-    // via Lenis but GSAP never sees them → the scroll appears "stuck".
-    lenis.on("scroll", ScrollTrigger.update);
+    // 2. Synchronisation précise Lenis ➔ GSAP ScrollTrigger
+    const onScroll = () => {
+      ScrollTrigger.update();
+    };
+    lenis.on("scroll", onScroll);
 
-    // Let GSAP's ticker drive Lenis instead of a raw rAF loop.
-    // This ensures both systems share the exact same frame timing.
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000); // GSAP gives seconds, Lenis expects ms
-    });
-
-    // Disable GSAP's internal lag-smoothing so it doesn't fight Lenis
+    // 3. Boucle d'animation unifiée dans le ticker GSAP
+    const onTicker = (time: number) => {
+      lenis.raf(time * 1000);
+    };
+    gsap.ticker.add(onTicker);
     gsap.ticker.lagSmoothing(0);
 
+    // 4. Rafraîchissement initial de ScrollTrigger
+    ScrollTrigger.refresh();
+
+    // 5. Nettoyage strict des écouteurs et destruction propre
     return () => {
-      lenis.off("scroll", ScrollTrigger.update);
-      gsap.ticker.remove(lenis.raf as any);
+      lenis.off("scroll", onScroll);
+      gsap.ticker.remove(onTicker);
       lenis.destroy();
+      ScrollTrigger.getAll().forEach((t) => t.kill());
     };
   }, []);
 

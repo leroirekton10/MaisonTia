@@ -27,25 +27,17 @@ export default function DualUniverse() {
       });
 
     const ctx = gsap.context(() => {
-      ScrollTrigger.create({
-        trigger: containerRef.current,
-        start: "top top",
-        end: "+=100%",
-        pin: true,
-        scrub: true,
-      });
-
       gsap.from(".universe-card", {
         scrollTrigger: {
           trigger: containerRef.current,
-          start: "top center",
+          start: "top 80%",
           toggleActions: "play none none reverse",
         },
-        y: 60,
+        y: 40,
         opacity: 0,
-        stagger: 0.3,
-        duration: 1.5,
-        ease: "power4.out",
+        stagger: 0.2,
+        duration: 1.2,
+        ease: "power3.out",
       });
     }, containerRef);
 
@@ -54,8 +46,8 @@ export default function DualUniverse() {
 
   const handleMouseMove = (e: React.MouseEvent, side: 'left' | 'right') => {
     const { clientX, clientY } = e;
-    const xPos = (clientX / window.innerWidth - 0.5) * 30;
-    const yPos = (clientY / window.innerHeight - 0.5) * 30;
+    const xPos = (clientX / window.innerWidth - 0.5) * 20;
+    const yPos = (clientY / window.innerHeight - 0.5) * 20;
 
     if (side === 'left') {
       gsap.to(leftPanelRef.current, { x: xPos, y: yPos, duration: 0.8, ease: "power2.out" });
@@ -69,24 +61,24 @@ export default function DualUniverse() {
   const goldProd = products.find(p => p.category?.toLowerCase() === 'gold');
   const silverProd = products.find(p => p.category?.toLowerCase() === 'silver');
 
-  if (loading) return <div className="h-screen w-full bg-obsidian" />;
+  if (loading) return <div className="h-96 w-full bg-obsidian" />;
 
   return (
-    <section ref={containerRef} className="relative h-screen w-full overflow-hidden bg-obsidian flex">
+    <section ref={containerRef} className="relative min-h-screen w-full overflow-hidden bg-obsidian flex flex-col md:flex-row">
       <div
         ref={leftPanelRef}
         onMouseMove={(e) => handleMouseMove(e, 'left')}
-        className="relative w-1/2 h-full group overflow-hidden border-r border-gold/20 transition-all duration-500 ease-out"
+        className="relative w-full md:w-1/2 min-h-[500px] md:h-full group overflow-hidden border-b md:border-b-0 md:border-r border-gold/20 transition-all duration-500 ease-out"
       >
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-obsidian/20 to-obsidian z-10" />
         <img
-          src={goldProd?.featuredImage || "https://via.placeholder.com/1920x1080?text=Gold+Universe"}
+          src={goldProd?.featuredImage || "/assets/instagram/photo acceuil 1.jpg"}
           className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 group-hover:scale-110 transition-all duration-[3s] ease-out"
           alt="Or et Diamants"
         />
-        <div className="absolute inset-0 z-20 flex flex-col justify-center items-center p-12 text-center">
-          <h3 className="universe-card font-serif text-5xl md:text-7xl text-gold mb-6 tracking-tight">{goldProd?.name || "L'éclat éternel"}</h3>
-          <p className="universe-card text-ivory/60 max-w-xs font-light leading-relaxed mb-12 italic">
+        <div className="absolute inset-0 z-20 flex flex-col justify-center items-center p-8 md:p-12 text-center">
+          <h3 className="universe-card font-serif text-4xl md:text-6xl text-gold mb-4 tracking-tight">{goldProd?.name || "L'éclat éternel"}</h3>
+          <p className="universe-card text-ivory/60 max-w-xs font-light leading-relaxed mb-8 italic text-sm">
             {goldProd?.description || "La pureté absolue du diamant de laboratoire."}
           </p>
           {goldProd && goldProd.id ? (
@@ -102,17 +94,17 @@ export default function DualUniverse() {
       <div
         ref={rightPanelRef}
         onMouseMove={(e) => handleMouseMove(e, 'right')}
-        className="relative w-1/2 h-full group overflow-hidden transition-all duration-500 ease-out"
+        className="relative w-full md:w-1/2 min-h-[500px] md:h-full group overflow-hidden transition-all duration-500 ease-out"
       >
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-obsidian/20 to-obsidian z-10" />
         <img
-          src={silverProd?.featuredImage || "https://via.placeholder.com/1920x1080?text=Silver+Universe"}
+          src={silverProd?.featuredImage || "/assets/instagram/photo acceuil 3.jpg"}
           className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 group-hover:scale-110 transition-all duration-[3s] ease-out"
           alt="Argent Beldi"
         />
-        <div className="absolute inset-0 z-20 flex flex-col justify-center items-center p-12 text-center">
-          <h3 className="universe-card font-serif text-5xl md:text-7xl text-ivory mb-6 tracking-tight">{silverProd?.name || "L'âme artisanale"}</h3>
-          <p className="universe-card text-muted max-w-xs font-light leading-relaxed mb-12 italic">
+        <div className="absolute inset-0 z-20 flex flex-col justify-center items-center p-8 md:p-12 text-center">
+          <h3 className="universe-card font-serif text-4xl md:text-6xl text-ivory mb-4 tracking-tight">{silverProd?.name || "L'âme artisanale"}</h3>
+          <p className="universe-card text-muted max-w-xs font-light leading-relaxed mb-8 italic text-sm">
             {silverProd?.description || "L'héritage du Beldi marocain."}
           </p>
           {silverProd ? (
