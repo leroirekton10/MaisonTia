@@ -22,14 +22,14 @@ export default function Home() {
       {/* 3. Dual Universe Showcase (The 2 Core Axes) */}
       <DualUniverseSplit />
 
-      {/* 4. Ultra-Smooth Cinematic Frame Scrubber */}
-      <FrameScrubber />
-
-      {/* 5. Savoir-Faire & Craftsmanship Story */}
+      {/* 4. Savoir-Faire & Craftsmanship Story */}
       <SavoirFaireSection />
 
-      {/* 6. Instagram & Video Gallery */}
+      {/* 5. Instagram & Video Gallery */}
       <InstagramGallery />
+
+      {/* 6. Ultra-Smooth Cinematic Haute Joaillerie Frame Scrubber */}
+      <FrameScrubber />
 
       {/* 7. Grand Finale VIP Call to Action */}
       <section className="relative py-32 px-6 bg-[#030303] text-center border-t border-[#D4AF37]/20 overflow-hidden">
