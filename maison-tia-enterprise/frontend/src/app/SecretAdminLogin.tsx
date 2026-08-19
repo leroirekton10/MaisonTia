@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { validatePassword, validateName, sanitizeString } from '@/lib/validators';
+import { apiClient } from '@/lib/api';
+
 
 export default function SecretAdminLogin() {
   const navigate = useNavigate();
@@ -62,22 +64,13 @@ export default function SecretAdminLogin() {
     setError('');
 
     try {
-      // Authenticate via real backend API
-      const response = await axios.post('/api/auth/login', {
+      // Authenticate via real backend API (sets HttpOnly cookie)
+      const data = await apiClient.login({
         username: cleanUsername,
         password: password,
-      }, { timeout: 5000 });
+      });
 
-      if (response.data && response.data.token) {
-        // Store the real JWT from the server
-        const sessionData = {
-          token: response.data.token,
-          role: response.data.role,
-          expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-        };
-
-        localStorage.setItem('adminToken', sessionData.token);
-        localStorage.setItem('adminSession', JSON.stringify(sessionData));
+      if (data && (data.status === 'SUCCESS' || data.token)) {
         setError('');
         navigate('/admin');
       } else {

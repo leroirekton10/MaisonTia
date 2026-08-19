@@ -66,11 +66,9 @@ export default function AdminDashboard() {
     setRequests(reqs);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminSession');
-    localStorage.removeItem('adminEmail');
-    navigate('/secret-vault-admin');
+  const handleLogout = async () => {
+    await apiClient.logout();
+    navigate('/login');
   };
 
   // Product CRUD with Zero-Trust Validation

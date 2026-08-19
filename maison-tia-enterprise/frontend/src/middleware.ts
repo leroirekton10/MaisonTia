@@ -83,8 +83,20 @@ export function resetRateLimit(identifier: string): void {
  * Vérifie si un token JWT est syntaxiquement valide et non expiré
  */
 export function verifyJwtToken(token: string | null): { isValid: boolean; payload?: any; reason?: string } {
+  // 1. Vérification session sécurisée (cookie HTTP-Only session)
+  const sessionRaw = localStorage.getItem('adminSession');
+  if (sessionRaw) {
+    try {
+      const session = JSON.parse(sessionRaw);
+      if (session.authenticated && session.expiresAt && Date.now() < session.expiresAt) {
+        return { isValid: true, payload: { username: session.username, role: session.role } };
+      }
+    } catch (err) {}
+  }
+
+  // 2. Si token explicite fourni
   if (!token || typeof token !== 'string') {
-    return { isValid: false, reason: 'Token absent' };
+    return { isValid: false, reason: 'Session non authentifiée' };
   }
 
   const parts = token.split('.');
@@ -93,7 +105,6 @@ export function verifyJwtToken(token: string | null): { isValid: boolean; payloa
   }
 
   try {
-    // Décodage payload (base64url)
     const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
       atob(base64)
@@ -103,23 +114,12 @@ export function verifyJwtToken(token: string | null): { isValid: boolean; payloa
     );
     const payload = JSON.parse(jsonPayload);
 
-    // Vérification de l'expiration
     if (payload.exp && Date.now() >= payload.exp * 1000) {
       return { isValid: false, reason: 'Token expiré' };
     }
 
     return { isValid: true, payload };
   } catch (e) {
-    // Fallback pour sessions persistées avec expiresAt explicite
-    const sessionRaw = localStorage.getItem('adminSession');
-    if (sessionRaw) {
-      try {
-        const session = JSON.parse(sessionRaw);
-        if (session.expiresAt && Date.now() < session.expiresAt) {
-          return { isValid: true };
-        }
-      } catch (err) {}
-    }
     return { isValid: false, reason: 'Token corrompu' };
   }
 }

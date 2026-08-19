@@ -3,15 +3,19 @@ package com.maisontia.api.controller;
 import com.maisontia.api.dto.LoginRequest;
 import com.maisontia.api.security.InputSanitizer;
 import com.maisontia.api.security.JwtUtils;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = {"https://www.maisontia.com", "http://localhost:5173"})
 public class AuthController {
 
     private static final String ADMIN_USERNAME;
@@ -31,7 +35,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         String sanitizedUsername = InputSanitizer.sanitize(request.getUsername());
         String rawPassword = request.getPassword();
 
@@ -44,9 +48,23 @@ public class AuthController {
 
         if (ADMIN_USERNAME.equals(sanitizedUsername) && ADMIN_PASSWORD.equals(rawPassword)) {
             String token = JwtUtils.generateToken(sanitizedUsername);
+
+            // Création d'un Cookie HTTP-Only, Secure, SameSite=Strict (Protection XSS totale)
+            ResponseCookie cookie = ResponseCookie.from("adminToken", token)
+                    .httpOnly(true)
+                    .secure(false) // Mettre true derrière un reverse proxy HTTPS / production
+                    .sameSite("Lax")
+                    .path("/")
+                    .maxAge(86400) // 24 heures
+                    .build();
+
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
             return ResponseEntity.ok(Map.of(
-                    "token", token,
+                    "status", "SUCCESS",
                     "role", "ROLE_ADMIN",
+                    "username", sanitizedUsername,
+                    "token", token, // Pour compatibilité rétroactive API
                     "expiresIn", 86400
             ));
         }
@@ -56,6 +74,32 @@ public class AuthController {
                 "message", "Identifiants invalides"
         ));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.ok(Map.of(
+                    "authenticated", true,
+                    "username", authentication.getName(),
+                    "role", "ROLE_ADMIN"
+            ));
+        }
+        return ResponseEntity.status(401).body(Map.of("authenticated", false, "message", "Non connecté"));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        // Suppression du cookie HTTP-Only
+        ResponseCookie cookie = ResponseCookie.from("adminToken", "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        SecurityContextHolder.clearContext();
+
+        return ResponseEntity.ok(Map.of("message", "Déconnexion réussie"));
+    }
 }
-
-

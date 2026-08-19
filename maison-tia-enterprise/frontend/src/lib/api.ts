@@ -4,9 +4,10 @@ import { sanitizeString } from "./validators";
 
 const API_BASE = "/api";
 
-const apiInstance = axios.create({
+export const apiInstance = axios.create({
   baseURL: API_BASE,
   timeout: 5000,
+  withCredentials: true, // Transmission automatique et sécurisée des Cookies HTTP-Only
 });
 
 apiInstance.interceptors.request.use((config) => {
@@ -41,6 +42,58 @@ export const saveStoredProducts = (products: Product[]) => {
 };
 
 export const apiClient = {
+  // ---------------------------------------------------------------------------
+  // AUTHENTICATION VIA HTTP-ONLY COOKIES
+  // ---------------------------------------------------------------------------
+  checkAuth: async (): Promise<{ authenticated: boolean; username?: string; role?: string }> => {
+    try {
+      const response = await apiInstance.get('/auth/me');
+      if (response.data && response.data.authenticated) {
+        return response.data;
+      }
+    } catch (e) {
+      // Backend offline or not authenticated via cookie
+    }
+    // Fallback session locale
+    const sessionRaw = localStorage.getItem('adminSession');
+    if (sessionRaw) {
+      try {
+        const session = JSON.parse(sessionRaw);
+        if (session.expiresAt && Date.now() < session.expiresAt) {
+          return { authenticated: true, username: session.username || 'admin', role: 'ROLE_ADMIN' };
+        }
+      } catch (err) {}
+    }
+    return { authenticated: false };
+  },
+
+  login: async (credentials: { username: string; password: string }) => {
+    const response = await apiInstance.post('/auth/login', credentials);
+    // Le serveur renvoie un Cookie Set-Cookie: adminToken=... HttpOnly
+    if (response.data.status === 'SUCCESS' || response.data.token) {
+      // Enregistre uniquement l'état de session sans exposer le secret brut
+      localStorage.setItem('adminSession', JSON.stringify({
+        authenticated: true,
+        username: credentials.username,
+        role: 'ROLE_ADMIN',
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000
+      }));
+    }
+    return response.data;
+  },
+
+  logout: async () => {
+    try {
+      await apiInstance.post('/auth/logout');
+    } catch (e) {}
+    localStorage.removeItem('adminSession');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('token');
+  },
+
+  // ---------------------------------------------------------------------------
+  // PRODUCTS CATALOG
+  // ---------------------------------------------------------------------------
   getProducts: async (): Promise<Product[]> => {
     try {
       const response = await apiInstance.get('/products');
@@ -131,6 +184,9 @@ export const apiClient = {
     return true;
   },
 
+  // ---------------------------------------------------------------------------
+  // CONSULTATIONS & CUSTOMER REQUESTS
+  // ---------------------------------------------------------------------------
   submitPublicRequest: async (requestData: {
     customerName: string;
     email: string;
@@ -200,4 +256,3 @@ export const apiClient = {
     } catch (e) {}
   }
 };
-
